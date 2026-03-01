@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Mini GTA Style Game</title>
+<style>
+body { margin:0; overflow:hidden; font-family:Arial; }
+#btn {
+    position:absolute;
+    bottom:20px;
+    left:50%;
+    transform:translateX(-50%);
+    padding:12px 20px;
+    background:black;
+    color:white;
+    display:none;
+    cursor:pointer;
+}
+</style>
+</head>
+<body>
+
+<div id="btn">Drive Car (E)</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.152/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.152/examples/js/controls/PointerLockControls.js"></script>
+
+<script>
+let scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87ceeb);
+
+let camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 1000);
+let renderer = new THREE.WebGLRenderer();
+renderer.setSize(innerWidth, innerHeight);
+document.body.appendChild(renderer.domElement);
+
+// Light
+let light = new THREE.DirectionalLight(0xffffff, 1);
+light.position.set(10,20,10);
+scene.add(light);
+
+// Ground
+let ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(500,500),
+    new THREE.MeshStandardMaterial({color:0x228B22})
+);
+ground.rotation.x = -Math.PI/2;
+scene.add(ground);
+
+// Road
+let road = new THREE.Mesh(
+    new THREE.BoxGeometry(200,0.1,20),
+    new THREE.MeshStandardMaterial({color:0x333333})
+);
+road.position.y = 0.05;
+scene.add(road);
+
+// Trees (Jungle)
+for(let i=0;i<30;i++){
+    let tree = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.5,0.5,5),
+        new THREE.MeshStandardMaterial({color:0x8B4513})
+    );
+    tree.position.set(
+        Math.random()*200-100,
+        2.5,
+        Math.random()*200-100
+    );
+    scene.add(tree);
+}
+
+// Player
+camera.position.set(0,2,10);
+let controls = new THREE.PointerLockControls(camera, document.body);
+document.body.addEventListener("click", ()=>controls.lock());
+
+// Car
+let car = new THREE.Mesh(
+    new THREE.BoxGeometry(4,1.5,2),
+    new THREE.MeshStandardMaterial({color:0xff0000})
+);
+car.position.set(5,0.75,0);
+scene.add(car);
+
+let driveMode = false;
+let btn = document.getElementById("btn");
+
+let keys = {};
+document.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
+document.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
+
+function animate(){
+    requestAnimationFrame(animate);
+
+    let speed = 0.15;
+
+    if(!driveMode){
+        if(keys.w) controls.moveForward(speed);
+        if(keys.s) controls.moveForward(-speed);
+        if(keys.a) controls.moveRight(-speed);
+        if(keys.d) controls.moveRight(speed);
+    } else {
+        if(keys.w) car.translateZ(-speed);
+        if(keys.s) car.translateZ(speed);
+        camera.position.set(car.position.x, car.position.y+2, car.position.z+5);
+        camera.lookAt(car.position);
+    }
+
+    // Distance check for car
+    let dist = camera.position.distanceTo(car.position);
+    if(dist < 5 && !driveMode){
+        btn.style.display="block";
+    } else {
+        btn.style.display="none";
+    }
+
+    if(keys.e && dist < 5){
+        driveMode = true;
+    }
+    if(keys.escape){
+        driveMode = false;
+    }
+
+    renderer.render(scene,camera);
+}
+animate();
+</script>
+
+</body>
+</html>
